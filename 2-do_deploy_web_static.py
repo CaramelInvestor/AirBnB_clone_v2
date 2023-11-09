@@ -1,50 +1,42 @@
 #!/usr/bin/python3
-"""
-Fabric script generates .tgz archive from contents of web_static directory
-"""
-from fabric.api import local, env, run, put
-from datetime import datetime
-import os
+"""Distributes an archive to your web servers"""
+#import re
+import datetime
+#import os.path
+from fabric.api import *
+
+env.hosts = ['35.174.208.232', '107.21.39.234']
 
 
-env.hosts = ['54.152.200.18', '54.224.57.104']
-
-
+@runs_once
 def do_pack():
-    """ return archive path if successful """
-    cur_time = datetime.now().strftime("%Y%m%d%H%M%S")
-
-    local("mkdir -p versions")
+    """Creates archive files"""
     try:
-        local("tar -cvzf versions/web_static_{}.tgz web_static".format(
-            cur_time))
-        return ("versions/web_static_{}.tgz".format(cur_time))
-    except:
+        local('mkdir -p versions')
+        dt = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
+        local('tar -cvzf "versions/web_static_{}.tgz" ./web_static'.
+              format(dt), capture=True)
+        return "versions/web_static_{}.tgz".format(dt)
+    except Exception as e:
+        print(e)
         return None
 
 
 def do_deploy(archive_path):
-    """ return `True` if successful """
-
-    if os.path.exists(archive_path):
-        return None
-    else:
-        return False
-
-    pathname = "/data/web_static"
-    filename = os.path.basename(archive_path)
-    name = os.path.splitext(filename)
-
+    """ deploys them to server """
     try:
+        filename = archive_path.split("/")[-1]
+        fname = filename.split(".")[0]
+        filepath = "/data/web_static/releases/%s" % fname
+
         put(archive_path, "/tmp")
-        run("mkdir -p /data/web_static/releases/{}".format(name))
-        run("tar -xzf /tmp/{} -C /data/web_static/releases/{}".format(
-            filename, name))
-        run("rm /tmp/{}".format(filename))
-        run("mv /data/web/static/releases/{}".format(name))
-        run("rm -rf /data/web_static/relases/{}/web_static".format(name))
+        run("sudo mkdir -p %s" % filepath)
+        run("sudo tar -xzf /tmp/%s -C %s" % (filename, filepath))
+        run("sudo rm /tmp/%s" % filename)
+        run("sudo mv %s/web_static/* %s/" % (filepath, filepath))
+        run("sudo rm -rf %s/web_static" % filepath)
         run("rm -rf /data/web_static/current")
-        run("ln -s {}/releases/{} {}/current".format(pathname, name))
+        run("sudo ln -s %s/ /data/web_static/current" % filepath)
         return True
-    except:
+    except Exception:
         return False
