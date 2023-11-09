@@ -1,31 +1,50 @@
 #!/usr/bin/python3
-'''Fabric module that distributes an archive to your web servers'''
-from fabric.api import env, run, put
-from os import path
+"""
+Fabric script generates .tgz archive from contents of web_static directory
+"""
+from fabric.api import local, env, run, put
+from datetime import datetime
+import os
 
-env.hosts = ['35.174.208.232', '107.21.39.234']
+
+env.hosts = ['54.152.200.18', '54.224.57.104']
+
+
+def do_pack():
+    """ return archive path if successful """
+    cur_time = datetime.now().strftime("%Y%m%d%H%M%S")
+
+    local("mkdir -p versions")
+    try:
+        local("tar -cvzf versions/web_static_{}.tgz web_static".format(
+            cur_time))
+        return ("versions/web_static_{}.tgz".format(cur_time))
+    except:
+        return None
 
 
 def do_deploy(archive_path):
-    '''Function that distributes an archive to your web servers'''
-    filename = archive_path[9:-4]
+    """ return `True` if successful """
 
-    if not path.exists(archive_path):
+    if os.path.exists(archive_path):
+        return None
+    else:
         return False
+
+    pathname = "/data/web_static"
+    filename = os.path.basename(archive_path)
+    name = os.path.splitext(filename)
+
     try:
-        put(archive_path, "/tmp/")
-        run("mkdir -p /data/web_static/releases/{}/".format(filename))
-        run('tar -zxf /tmp/{} -C /data/web_static/releases/{}/'
-            .format(filename + ".tgz", filename))
-        run('rm /tmp/{}'.format(filename + '.tgz'))
-        run('mv /data/web_static/releases/{}/web_static/* '
-            ' /data/web_static/releases/{}/'.format(filename, filename))
-        run('rm -rf /data/web_static/releases/{}/web_static'
-            .format(filename))
-        run('rm -rf /data/web_static/current')
-        run('ln -s /data/web_static/releases/{}/ /data/web_static/current'
-            .format(filename))
+        put(archive_path, "/tmp")
+        run("mkdir -p /data/web_static/releases/{}".format(name))
+        run("tar -xzf /tmp/{} -C /data/web_static/releases/{}".format(
+            filename, name))
+        run("rm /tmp/{}".format(filename))
+        run("mv /data/web/static/releases/{}".format(name))
+        run("rm -rf /data/web_static/relases/{}/web_static".format(name))
+        run("rm -rf /data/web_static/current")
+        run("ln -s {}/releases/{} {}/current".format(pathname, name))
         return True
     except:
         return False
-    return False
