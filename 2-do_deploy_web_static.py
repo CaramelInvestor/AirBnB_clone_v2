@@ -1,16 +1,14 @@
 #!/usr/bin/python3
-"""Distributes an archive to your web servers"""
-#import re
+"""fab file that distributes an archive to your web servers"""
+
 import datetime
-#import os.path
-from fabric.api import *
+from fabric.api import env, put, run, local
 
 env.hosts = ['35.174.208.232', '107.21.39.234']
 
 
-@runs_once
 def do_pack():
-    """Creates archive files"""
+    """Function that creates archive files"""
     try:
         local('mkdir -p versions')
         dt = datetime.datetime.now().strftime("%Y%m%d%H%M%S")
@@ -23,7 +21,7 @@ def do_pack():
 
 
 def do_deploy(archive_path):
-    """ deploys them to server """
+    """deploys archives to web servers """
     try:
         filename = archive_path.split("/")[-1]
         fname = filename.split(".")[0]
