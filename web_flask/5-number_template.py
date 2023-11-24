@@ -46,7 +46,7 @@ def number_route(n):
 def number_template_route(n):
     """Display an HTML page with H1 tag: "Number: n"
     if n is an integer"""
-    return render_template('5-number_template.html', n=n)
+    return render_template('5-number.html', n=n)
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
